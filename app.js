@@ -1,44 +1,27 @@
 // imports
 const fs = require('fs');
-const pageTemplate = require('./src/page-template.js');
+const generatePage = require('./src/page-template.js');
+const { writeFile, copyFile } = require('./utils/generate-site.js');
 const inquirer = require('inquirer');
 
 // variables
 // const profileDataArgs = process.argv.slice(2, process.argv.length);
-const promtProject = (portfolioData) => {
-
-    if (!portfolioData.projects) {
-        portfolioData.projects = [];
-    }
-
-    console.log(`
-        =================
-        Add a new Project
-        =================
-    `)
-    inquirer.prompt([
+const promptUser = () => {
+    return inquirer.prompt([
         {
-            type: "input",
-            name: "name",
-            message: "Enter porject name (Required): ",
+            type: 'input',
+            name: 'name',
+            message: 'What is your name?'
+        },
+        {
+            type: 'input',
+            name: 'github',
+            message: 'Enter your GitHub Username (Required)',
             validate: nameInput => {
                 if (nameInput) {
                     return true;
                 } else {
                     console.log('Please enter your name!');
-                    return false;
-                }
-            }
-        },
-        {
-            type: "input",
-            name: "username",
-            message: "Enter your GitHub username: ",
-            validate: nameInput => {
-                if (nameInput) {
-                    return true;
-                } else {
-                    console.log('Please enter your GitHub uesername');
                     return false;
                 }
             }
@@ -61,67 +44,109 @@ const promtProject = (portfolioData) => {
                 }
             }
         },
+    ]);
+};
+
+const promptProject = portfolioData => {
+
+    if (!portfolioData.projects) {
+        portfolioData.projects = [];
+    }
+
+    console.log(`
+  =================
+  Add a New Project
+  =================
+  `);
+    return inquirer.prompt([
         {
-            type: "input",
-            name: "description",
-            message: "Enter a description about the project: ",
+            type: 'input',
+            name: 'name',
+            message: 'What is the name of your project?',
             validate: nameInput => {
                 if (nameInput) {
                     return true;
                 } else {
-                    console.log('Please enter project description');
+                    console.log('Please enter your project name!');
                     return false;
                 }
             }
         },
         {
-            type: "checkbox",
-            name: "languages",
-            message: "Select what tools were used to build this porject: ",
-            choices: ["JavaScript", "HTML", "CSS", "Node", "ES6", "jQuery", "Bootstrap",]
-        },
-        {
-            type: "input",
-            name: "link",
-            message: "Enter GitHub link to your project: ",
+            type: 'input',
+            name: 'description',
+            message: 'Provide a description of the project (Required)',
             validate: nameInput => {
                 if (nameInput) {
                     return true;
                 } else {
-                    console.log('Please enter project link');
+                    console.log('Please enter project description!');
                     return false;
                 }
             }
         },
         {
-            type: "confirm",
-            name: "feature",
-            message: "Confirm if you would like to feature this project: ",
+            type: 'checkbox',
+            name: 'languages',
+            message: 'What did you build this project with? (Check all that apply)',
+            choices: ['JavaScript', 'HTML', 'CSS', 'ES6', 'jQuery', 'Bootstrap', 'Node']
+        },
+        {
+            type: 'input',
+            name: 'link',
+            message: 'Enter the GitHub link to your project. (Required)',
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter project!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'confirm',
+            name: 'feature',
+            message: 'Would you like to feature this project?',
             default: false
         },
         {
-            type: "confirm",
-            name: "confirmAddProject",
-            message: "Confirm if you would like to add another project: ",
+            type: 'confirm',
+            name: 'confirmAddProject',
+            message: 'Would you like to enter another project?',
             default: false
         }
-    ]).then(answers => {
-        portfolioData.projects.push(answers);
-        console.log(portfolioData.projects);
-        if (answers.confirmAddProject) {
-            return promtProject(answers);
-        } else {
-            return answers;
-        }
+    ])
+        .then(projectData => {
+            portfolioData.projects.push(projectData);
+
+            if (projectData.confirmAddProject) {
+                return promptProject(portfolioData);
+            } else {
+                return portfolioData;
+            }
+        });
+};
+
+
+
+promptUser()
+    .then(promptProject)
+    .then(portfolioData => {
+        return generatePage(portfolioData);
+    })
+    .then(pageHTML => {
+        return writeFile(pageHTML);
+    })
+    .then(writeFileResponse => {
+        console.log(writeFileResponse);
+        return copyFile();
+    })
+    .then(copyFileResponse => {
+        console.log(copyFileResponse);
+    })
+    .catch(err => {
+        console.log(err);
     });
-}
 
-promtProject([]);
 // Function calls
-// pageTemplate.generatePage(userName, github);
-
-// fs.writeFile("./index.html", pageTemplate.generatePage(userName, github), err => {
-//     if (err) throw err;
-
-//     console.log("Portfolio Complete! checkout index.html to see the output!");
-// })
